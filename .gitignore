@@ -1,5 +1,35 @@
+# Node.js 相關
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# 環境變數
 .env
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+.env.local
+.env.development
+.env.production
+
+# 日誌檔案
+logs/
+*.log
+*.log.*
+
+# 編譯或臨時檔案
+dist/
+build/
+coverage/
+
+# 作業系統生成的檔案
+.DS_Store
+Thumbs.db
+
+# IDE 和編輯器檔案
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# 其他
+tmp/
+temp/
