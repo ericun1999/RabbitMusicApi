@@ -177,6 +177,11 @@ const StudentAttendance = sequelize.define('StudentAttendance', {
     allowNull: false,
     primaryKey: true,
   },
+  attended: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
 }, {
   tableName: 'Student_Attendance',
   timestamps: false,
@@ -202,6 +207,11 @@ const TeacherAttendance = sequelize.define('TeacherAttendance', {
     type: DataTypes.INTEGER,
     allowNull: false,
     primaryKey: true,
+  },
+  attended: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
   },
 }, {
   tableName: 'Teacher_Attendance',
@@ -321,12 +331,14 @@ const validateAttendance = [
 const validateStudentAttendance = [
   body('student_id').isInt(),
   body('attendance_id').isInt(),
+  body('attended').isBoolean().withMessage('Attended must be a boolean'),
 ];
 
 const validateTeacherAttendance = [
   body('teacher_id').isInt(),
   body('teacher_earning').isInt({ min: 0 }),
   body('attendance_id').isInt(),
+  body('attended').isBoolean().withMessage('Attended must be a boolean'),
 ];
 
 const validateLessonId = [
@@ -500,10 +512,11 @@ app.post('/api/student-attendance', authenticateToken, validateStudentAttendance
   }
 
   try {
-    const { student_id, attendance_id } = req.body;
+    const { student_id, attendance_id, attended } = req.body;
     const studentAttendance = await StudentAttendance.create({
       student_id,
       attendance_id,
+      attended,
     });
     res.status(201).json(studentAttendance);
   } catch (error) {
@@ -518,11 +531,12 @@ app.post('/api/teacher-attendance', authenticateToken, validateTeacherAttendance
   }
 
   try {
-    const { teacher_id, teacher_earning, attendance_id } = req.body;
+    const { teacher_id, teacher_earning, attendance_id, attended } = req.body;
     const teacherAttendance = await TeacherAttendance.create({
       teacher_id,
       teacher_earning,
       attendance_id,
+      attended,
     });
     res.status(201).json(teacherAttendance);
   } catch (error) {
@@ -551,6 +565,7 @@ app.get('/api/teacher-salaries', authenticateToken, async (req, res) => {
       WHERE 
           a.lesson_time >= CURRENT_DATE - INTERVAL '2 months'
           AND a.lesson_time <= CURRENT_DATE
+          AND ta.attended = TRUE
       GROUP BY 
           t.teacher_id, t.name
       ORDER BY 
@@ -587,6 +602,7 @@ app.get('/api/student-remaining-lessons/:lesson_id', authenticateToken, validate
           "Attendance" a ON sa.attendance_id = a.attendance_id AND a.lesson_id = :lesson_id
       WHERE 
           ls.lesson_id = :lesson_id
+          AND (sa.attended = TRUE OR sa.attended IS NULL)
       GROUP BY 
           s.student_id, s.name
       ORDER BY 
@@ -634,7 +650,8 @@ app.get('/api/profit-past-month', authenticateToken, async (req, res) => {
            AND p.payment_time <= CURRENT_DATE)
           OR 
           (a.lesson_time >= CURRENT_DATE - INTERVAL '1 month' 
-           AND a.lesson_time <= CURRENT_DATE)
+           AND a.lesson_time <= CURRENT_DATE
+           AND ta.attended = TRUE)
           OR 
           (p.payment_time IS NULL AND a.lesson_time IS NULL)
     `);
